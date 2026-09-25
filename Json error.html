@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Práctica: consumir JSON y controlar errores</title>
+<style>
+  :root{ --papel:#F3F5F7; --hoja:#FFFFFF; --tinta:#16202B; --suave:#5B6673; --linea:#DDE2E7; --error:#C62D2D; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);font-family:Arial,sans-serif;font-size:15px;line-height:1.5;padding:24px}
+  h1{font-size:1.4rem}
+  table{width:100%;border-collapse:collapse;background:var(--hoja);border:1px solid var(--linea);border-radius:8px;overflow:hidden;margin-top:16px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--linea)}
+  th{background:#EEF1F4;font-size:.8rem;text-transform:uppercase;color:var(--suave)}
+  .estado{padding:24px;text-align:center;border:1px dashed var(--linea);border-radius:8px;margin-top:16px}
+  .estado.error{color:var(--error);border-color:var(--error)}
+  .nota{color:var(--suave);font-size:.85rem}
+  button{margin-top:14px;padding:8px 14px;border-radius:6px;border:1px solid var(--linea);cursor:pointer}
+</style>
+</head>
+<body>
+
+<h1>Práctica: consumir JSON y controlar errores</h1>
+<p class="nota">Este archivo trae los datos desde envios.json usando fetch, y controla los casos de carga, error y datos vacíos o incompletos.</p>
+
+<!-- Botones para simular los distintos casos límite -->
+<div>
+  <button id="btn-normal">Cargar envios.json (normal)</button>
+  <button id="btn-inexistente">Simular archivo inexistente (error 404)</button>
+  <button id="btn-vacio">Simular JSON vacío</button>
+</div>
+
+<div id="cargando" class="estado" hidden>Cargando datos...</div>
+<div id="error" class="estado error" hidden>
+  Ocurrió un error al cargar los envíos. <span id="detalle-error"></span>
+</div>
+<div id="vacio" class="estado" hidden>No hay envíos para mostrar.</div>
+
+<table id="tabla-cont" hidden>
+  <thead><tr><th>ID</th><th>Cliente</th><th>Destino</th><th>Estado</th><th>Fecha</th><th>Costo</th></tr></thead>
+  <tbody id="tabla"></tbody>
+</table>
+
+<script>
+/* =====================================================================
+   1. MOSTRAR — controla cuál bloque se ve: cargando, error, vacio o tabla
+   ===================================================================== */
+function mostrar(nombre) {
+  ["cargando", "error", "vacio", "tabla-cont"].forEach(id => {
+    document.getElementById(id).hidden = id !== nombre;
+  });
+}
+
+/* =====================================================================
+   2. CARGAR JSON CON FETCH — aquí ocurre la petición real al archivo
+   ruta: la URL del archivo JSON a consumir (puede no existir, para probar el error)
+   ===================================================================== */
+async function cargarJSON(ruta) {
+  const respuesta = await fetch(ruta);
+  if (!respuesta.ok) {
+    // Si el servidor responde con error (por ejemplo 404), lo convertimos
+    // en una excepción para que el catch de abajo la controle
+    throw new Error(`No se pudo cargar el archivo (código ${respuesta.status})`);
+  }
+  const datos = await respuesta.json();
+  if (!Array.isArray(datos)) {
+    // Caso límite: el JSON existe pero no tiene la forma esperada (una lista)
+    throw new Error("El formato del archivo no es válido, se esperaba una lista");
+  }
+  return datos;
+}
+
+/* =====================================================================
+   3. DIBUJAR TABLA — recibe la lista ya validada y la pinta en pantalla
+   ===================================================================== */
+function dibujarTabla(envios) {
+  document.getElementById("tabla").innerHTML = envios.map(e => `
+    <tr>
+      <td>${e.id ?? "—"}</td>
+      <td>${e.cliente ?? "—"}</td>
+      <td>${e.destino ?? "—"}</td>
+      <td>${e.estado ?? "—"}</td>
+      <td>${e.fecha ?? "—"}</td>
+      <td>${e.costo != null ? "$" + e.costo : "Sin dato"}</td>
+    </tr>`).join("");
+}
+
+/* =====================================================================
+   4. INICIAR — junta todo: muestra "cargando", intenta traer los datos,
+   y según el resultado muestra la tabla, el estado vacío o el error
+   ===================================================================== */
+async function iniciar(ruta) {
+  mostrar("cargando");
+  try {
+    const envios = await cargarJSON(ruta);
+    if (envios.length === 0) {
+      mostrar("vacio");           // caso límite: JSON vacío
+      return;
+    }
+    dibujarTabla(envios);
+    mostrar("tabla-cont");
+  } catch (err) {
+    document.getElementById("detalle-error").textContent = err.message;
+    mostrar("error");
+    console.error(err);
+  }
+}
+
+/* =====================================================================
+   5. BOTONES DE PRUEBA — simulan los distintos casos para practicar
+   ===================================================================== */
+document.getElementById("btn-normal").addEventListener("click", () => iniciar("envios.json"));
+document.getElementById("btn-inexistente").addEventListener("click", () => iniciar("archivo_que_no_existe.json"));
+document.getElementById("btn-vacio").addEventListener("click", () => iniciar("envios_vacio.json"));
+
+// Carga normal al abrir la página
+iniciar("envios.json");
+</script>
+</body>
+</html>

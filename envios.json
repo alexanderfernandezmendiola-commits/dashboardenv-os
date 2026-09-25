@@ -1,0 +1,50 @@
+[
+  {
+    "id": "ENV-01",
+    "cliente": "Abarrotes La Esperanza",
+    "destino": "Puebla",
+    "estado": "entregado",
+    "fecha": "2026-09-12",
+    "costo": 240
+  },
+  {
+    "id": "ENV-02",
+    "cliente": "Farmacia San Rafael",
+    "destino": "Xalapa",
+    "estado": "en_transito",
+    "fecha": "2026-09-19",
+    "costo": 185
+  },
+  {
+    "id": "ENV-03",
+    "cliente": "Ferretería El Tornillo",
+    "destino": "CDMX",
+    "estado": "retrasado",
+    "fecha": "2026-09-08",
+    "costo": 320
+  },
+  {
+    "id": "ENV-04",
+    "cliente": "Boutique Aurora",
+    "destino": "Guadalajara",
+    "estado": "en_transito",
+    "fecha": "2026-09-18",
+    "costo": 410
+  },
+  {
+    "id": "ENV-05",
+    "cliente": "Papelería Central",
+    "destino": "Córdoba",
+    "estado": "entregado",
+    "fecha": "2026-09-14",
+    "costo": 130
+  },
+  {
+    "id": "ENV-06",
+    "cliente": "Taller Mecánico Ruiz",
+    "destino": "Monterrey",
+    "estado": "pendiente",
+    "fecha": "2026-09-21",
+    "costo": 495
+  }
+]
