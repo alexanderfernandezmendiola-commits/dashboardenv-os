@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Envíos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --papel:#F4F6F5;
+  --hoja:#FFFFFF;
+  --tinta:#16202B;
+  --tinta-suave:#56616D;
+  --linea:#D6DBDF;
+  --foco:#1F4FD8;
+
+  /* un color por estado del envío */
+  --c-pendiente:#B07A10;
+  --c-en_transito:#1F4FD8;
+  --c-retrasado:#C62D2D;
+  --c-entregado:#1E7B4F;
+  --c-cancelado:#6B7280;
+
+  --fuente:"Archivo","Helvetica Neue",Arial,sans-serif;
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--fuente); font-size:16px; line-height:1.5;
+  font-variant-numeric:tabular-nums;
+}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--foco);outline-offset:2px}
+.solo-lector{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.pagina{max-width:1080px;margin:0 auto;padding:28px 20px 72px}
+
+/* ---------- Cabecera ---------- */
+.cabecera{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+  padding-bottom:14px;border-bottom:1px solid var(--linea)}
+.cabecera h1{margin:0;font-size:1.125rem;font-weight:700;font-stretch:90%}
+.corte{margin:0;color:var(--tinta-suave);font-size:.875rem}
+
+/* ---------- Titular ---------- */
+.titular{
+  margin:36px 0 28px; max-width:18ch;
+  font-size:clamp(2rem,5.4vw,3.6rem); font-weight:750; font-stretch:86%;
+  line-height:1.04; letter-spacing:-.02em; text-wrap:balance;
+}
+
+/* ---------- Riel de estados (elemento principal) ---------- */
+.riel{display:flex;flex-wrap:wrap;gap:6px}
+.tramo{
+  flex:1 1 0; min-width:104px; display:grid; gap:8px; padding:0;
+  background:none; border:0; text-align:left; cursor:pointer;
+  transition:opacity .15s;
+}
+.barra{display:block;height:10px;border-radius:5px;background:var(--c)}
+.tramo-info{display:flex;justify-content:space-between;gap:8px;font-size:.9375rem}
+.tramo-info strong{font-weight:700}
+.tramo[aria-pressed="true"] .tramo-info span{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.riel:has([aria-pressed="true"]) .tramo[aria-pressed="false"]{opacity:.45}
+.riel.entra .barra{transform-origin:left;animation:crecer .7s cubic-bezier(.2,.7,.2,1) both}
+@keyframes crecer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* ---------- Cifras ---------- */
+.cifras{display:grid;grid-template-columns:repeat(4,1fr);margin:40px 0 0;padding:0}
+.cifra{padding:0 20px;border-left:1px solid var(--linea)}
+.cifra:first-child{padding-left:0;border-left:0}
+.cifra dt{font-size:.875rem;color:var(--tinta-suave)}
+.cifra .valor{margin:2px 0 0;font-size:2rem;font-weight:700;font-stretch:90%;line-height:1.15}
+.cifra .valor.alerta{color:var(--c-retrasado)}
+.cifra .nota{margin:2px 0 0;font-size:.8125rem;color:var(--tinta-suave)}
+
+/* ---------- Filtros ---------- */
+.filtros{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin:44px 0 16px}
+.campo{display:grid;gap:4px;font-size:.875rem;color:var(--tinta-suave)}
+.campo select{
+  min-width:170px;padding:8px 10px;background:var(--hoja);color:var(--tinta);
+  border:1px solid var(--linea);border-radius:6px;
+}
+.enlace{background:none;border:0;padding:8px 0;color:var(--foco);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- Cuerpo: tabla + destinos ---------- */
+.cuerpo{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:40px;align-items:start}
+.cuerpo h2{margin:0 0 12px;font-size:1rem;font-weight:700;font-stretch:90%}
+.tabla-caja{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--linea);font-size:.9375rem}
+tbody tr:last-child td{border-bottom:0}
+th{font-size:.8125rem;font-weight:600;color:var(--tinta-suave);white-space:nowrap}
+th button{background:none;border:0;padding:0;font-weight:inherit;font-size:inherit;color:inherit;cursor:pointer}
+th[aria-sort="ascending"] button::after{content:" ▲";font-size:.65em}
+th[aria-sort="descending"] button::after{content:" ▼";font-size:.65em}
+td.id{font-weight:700}
+.num{text-align:right}
+.estado{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.estado i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.vacio-fila{padding:28px 14px;color:var(--tinta-suave)}
+
+.destinos{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.destinos li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.9375rem}
+.destinos .d-pista{grid-column:1 / -1;height:8px;background:var(--linea);border-radius:4px;overflow:hidden}
+.destinos .d-pista i{display:block;height:100%;background:var(--tinta);border-radius:4px}
+
+/* ---------- Definiciones ---------- */
+.definiciones{margin-top:48px;padding-top:16px;border-top:1px solid var(--linea);font-size:.9375rem}
+.definiciones summary{cursor:pointer;font-weight:600}
+.definiciones ul{margin:12px 0 0;padding-left:20px;color:var(--tinta-suave)}
+.definiciones li{margin-bottom:6px;max-width:70ch}
+
+/* ---------- Estados de pantalla ---------- */
+.mensaje{max-width:52ch;padding:56px 0}
+.mensaje h2{margin:0 0 8px;font-size:1.5rem;font-weight:700;font-stretch:90%}
+.mensaje p{margin:0 0 16px;color:var(--tinta-suave)}
+.boton{padding:10px 16px;background:var(--tinta);color:#fff;border:0;border-radius:6px;font-weight:600;cursor:pointer}
+.esqueleto{display:grid;gap:14px;padding:40px 0}
+.esqueleto span{display:block;height:16px;border-radius:4px;background:var(--linea)}
+.esqueleto span:nth-child(1){height:48px;width:min(420px,80%)}
+.esqueleto span:nth-child(2){height:10px}
+.esqueleto span:nth-child(3){width:60%}
+.esqueleto span:nth-child(4){width:80%}
+
+/* ---------- Responsive ---------- */
+@media (max-width:820px){
+  .cuerpo{grid-template-columns:minmax(0,1fr);gap:32px}
+  .tramo{min-width:42%}
+  .cifras{grid-template-columns:repeat(2,1fr);row-gap:24px}
+  .cifra:nth-child(3){padding-left:0;border-left:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<main class="pagina">
+
+  <header class="cabecera">
+    <h1>Envíos</h1>
+    <p class="corte" id="corte"></p>
+  </header>
+
+  <!-- Estado: cargando -->
+  <section id="cargando" hidden aria-busy="true">
+    <p class="solo-lector">Cargando envíos…</p>
+    <div class="esqueleto" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  </section>
+
+  <!-- Estado: error -->
+  <section id="error" class="mensaje" hidden role="alert">
+    <h2>No se pudieron cargar los envíos</h2>
+    <p>Revisa tu conexión e inténtalo de nuevo. Si el problema sigue, avisa al equipo de sistemas.</p>
+    <button type="button" class="boton" id="reintentar">Reintentar</button>
+  </section>
+
+  <!-- Estado: sin datos -->
+  <section id="vacio" class="mensaje" hidden>
+    <h2>Aún no hay envíos registrados</h2>
+    <p>Cuando registres el primer envío, aparecerá aquí con su estado y su costo.</p>
+  </section>
+
+  <!-- Estado: con datos -->
+  <section id="contenido" hidden>
+    <p class="titular" id="titular" aria-live="polite"></p>
+
+    <h2 class="solo-lector">Envíos por estado. Selecciona un estado para filtrar la tabla.</h2>
+    <div class="riel" id="riel"></div>
+
+    <h2 class="solo-lector">Cifras principales</h2>
+    <dl class="cifras" id="cifras"></dl>
+
+    <div class="filtros">
+      <label class="campo">Estado
+        <select id="f-estado"></select>
+      </label>
+      <label class="campo">Destino
+        <select id="f-destino"></select>
+      </label>
+      <button type="button" class="enlace limpiar" id="limpiar" hidden>Limpiar filtros</button>
+    </div>
+
+    <div class="cuerpo">
+      <div>
+        <h2>Detalle de envíos</h2>
+        <div class="tabla-caja">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" data-campo="id"><button type="button">Envío</button></th>
+                <th scope="col" data-campo="cliente"><button type="button">Cliente</button></th>
+                <th scope="col" data-campo="destino"><button type="button">Destino</button></th>
+                <th scope="col" data-campo="estado"><button type="button">Estado</button></th>
+                <th scope="col" data-campo="fecha"><button type="button">Fecha</button></th>
+                <th scope="col" class="num" data-campo="costo"><button type="button">Costo</button></th>
+              </tr>
+            </thead>
+            <tbody id="tabla"></tbody>
+          </table>
+        </div>
+      </div>
+      <aside>
+        <h2>Envíos por destino</h2>
+        <ul class="destinos" id="destinos"></ul>
+      </aside>
+    </div>
+
+    <details class="definiciones">
+      <summary>Cómo se calculan las cifras</summary>
+      <ul>
+        <li><strong>Envíos:</strong> cantidad de envíos que cumplen los filtros activos.</li>
+        <li><strong>Entregados:</strong> envíos con estado «entregado» dividido entre el total de envíos filtrados.</li>
+        <li><strong>Retrasados:</strong> envíos con estado «retrasado».</li>
+        <li><strong>Costo promedio:</strong> suma del costo de los envíos filtrados dividida entre su cantidad.</li>
+        <li>El titular y el riel de estados respetan solo el filtro de destino, para que puedas cambiar de estado sin perder el panorama.</li>
+      </ul>
+    </details>
+  </section>
+
+</main>
+
+<script>
+/* =====================================================================
+   1. DATOS  —  reemplaza este arreglo o usa fetch() dentro de cargarEnvios()
+   ===================================================================== */
+const ENVIOS_EJEMPLO = [
+  { id: "ENV-001", cliente: "Cliente Demo 1", destino: "Puebla",   estado: "en_transito", fecha: "2026-09-18", costo: 180 },
+  { id: "ENV-002", cliente: "Cliente Demo 2", destino: "Veracruz", estado: "entregado",   fecha: "2026-09-15", costo: 120 },
+  { id: "ENV-003", cliente: "Cliente Demo 3", destino: "CDMX",     estado: "retrasado",   fecha: "2026-09-10", costo: 260 },
+  { id: "ENV-004", cliente: "Cliente Demo 4", destino: "Puebla",   estado: "pendiente",   fecha: "2026-09-20", costo: 150 }
+];
+
+/* Para probar los estados de pantalla, agrega a la URL:
+   ?simular=lento   ?simular=error   ?simular=vacio               */
+function cargarEnvios() {
+  const modo = new URLSearchParams(location.search).get("simular");
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (modo === "error") return reject(new Error("Error simulado"));
+      if (modo === "vacio") return resolve([]);
+      resolve(ENVIOS_EJEMPLO);
+    }, modo === "lento" ? 2500 : 500);
+  });
+  /* Con un servidor real, sustituye lo anterior por:
+     return fetch("/api/envios").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  */
+}
+
+/* =====================================================================
+   2. CONFIGURACIÓN Y ESTADO
+   ===================================================================== */
+const ETIQUETAS = { pendiente: "Pendiente", en_transito: "En tránsito", retrasado: "Retrasado", entregado: "Entregado", cancelado: "Cancelado" };
+const ORDEN = ["pendiente", "en_transito", "retrasado", "entregado", "cancelado"];
+
+let envios = [];
+const filtro = { estado: "todos", destino: "todos" };
+const orden = { campo: "fecha", dir: "desc" };
+let primeraVez = true;
+
+const moneda = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+const porcentaje = new Intl.NumberFormat("es-MX", { style: "percent", maximumFractionDigits: 0 });
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const etiqueta = k => ETIQUETAS[k] || k;
+const $ = id => document.getElementById(id);
+
+function fechaLegible(iso) {
+  const [a, m, d] = String(iso).split("-").map(Number);       // evita el desfase de zona horaria
+  return new Date(a, m - 1, d).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* =====================================================================
+   3. ESTADOS DE PANTALLA: cargando | error | vacio | contenido
+   ===================================================================== */
+function mostrar(nombre) {
+  ["cargando", "error", "vacio", "contenido"].forEach(id => { $(id).hidden = id !== nombre; });
+}
+
+/* =====================================================================
+   4. RENDER
+   ===================================================================== */
+function render() {
+  if (envios.length === 0) { mostrar("vacio"); return; }
+  mostrar("contenido");
+
+  const baseRiel = envios.filter(e => filtro.destino === "todos" || e.destino === filtro.destino);
+  const f = baseRiel.filter(e => filtro.estado === "todos" || e.estado === filtro.estado);
+
+  renderTitular(baseRiel);
+  renderRiel(baseRiel);
+  renderCifras(f);
+  renderTabla(f);
+  renderDestinos(f);
+  $("limpiar").hidden = filtro.estado === "todos" && filtro.destino === "todos";
+  primeraVez = false;
+}
+
+function renderTitular(base) {
+  const total = base.length;
+  const ret = base.filter(e => e.estado === "retrasado").length;
+  const sust = total === 1 ? "envío" : "envíos";
+  $("titular").textContent =
+    total === 0 ? "No hay envíos para este destino." :
+    ret === 0   ? "Ningún envío va con retraso." :
+    `${ret} de ${total} ${sust} ${ret === 1 ? "va" : "van"} con retraso.`;
+}
+
+function renderRiel(base) {
+  const cont = {};
+  base.forEach(e => { cont[e.estado] = (cont[e.estado] || 0) + 1; });
+  const claves = ORDEN.filter(k => cont[k]).concat(Object.keys(cont).filter(k => !ORDEN.includes(k)));
+  $("riel").className = "riel" + (primeraVez ? " entra" : "");
+  $("riel").innerHTML = claves.map(k => `
+    <button type="button" class="tramo" data-estado="${esc(k)}"
+            style="flex-grow:${cont[k]};--c:var(--c-${esc(k)}, var(--c-cancelado))"
+            aria-pressed="${filtro.estado === k}">
+      <span class="barra"></span>
+      <span class="tramo-info"><span>${esc(etiqueta(k))}</span><strong>${cont[k]}</strong></span>
+    </button>`).join("");
+}
+
+function renderCifras(f) {
+  const total = f.length;
+  const ent = f.filter(e => e.estado === "entregado").length;
+  const ret = f.filter(e => e.estado === "retrasado").length;
+  const suma = f.reduce((s, e) => s + Number(e.costo || 0), 0);
+  const cifra = (titulo, valor, nota, clase = "") =>
+    `<div class="cifra"><dt>${titulo}</dt><dd class="valor ${clase}">${valor}</dd><dd class="nota">${nota}</dd></div>`;
+  $("cifras").innerHTML =
+    cifra("Envíos", total, `Costo total ${moneda.format(suma)}`) +
+    cifra("Entregados", total ? porcentaje.format(ent / total) : "—", total ? `${ent} de ${total}` : "Sin envíos") +
+    cifra("Retrasados", ret, ret ? "Requieren seguimiento" : "Ninguno", ret ? "alerta" : "") +
+    cifra("Costo promedio", total ? moneda.format(suma / total) : "—", "Por envío");
+}
+
+function valorOrden(e, campo) {
+  if (campo === "costo") return Number(e.costo || 0);
+  if (campo === "estado") { const i = ORDEN.indexOf(e.estado); return i === -1 ? 99 : i; }
+  return String(e[campo] ?? "");
+}
+
+function renderTabla(f) {
+  const filas = [...f].sort((a, b) => {
+    const x = valorOrden(a, orden.campo), y = valorOrden(b, orden.campo);
+    const r = typeof x === "number" ? x - y : x.localeCompare(y, "es");
+    return orden.dir === "asc" ? r : -r;
+  });
+
+  document.querySelectorAll("th[data-campo]").forEach(th => {
+    th.setAttribute("aria-sort", th.dataset.campo === orden.campo ? (orden.dir === "asc" ? "ascending" : "descending") : "none");
+  });
+
+  $("tabla").innerHTML = filas.length
+    ? filas.map(e => `
+      <tr>
+        <td class="id">${esc(e.id)}</td>
+        <td>${esc(e.cliente)}</td>
+        <td>${esc(e.destino)}</td>
+        <td><span class="estado" style="--c:var(--c-${esc(e.estado)}, var(--c-cancelado))"><i></i>${esc(etiqueta(e.estado))}</span></td>
+        <td>${esc(fechaLegible(e.fecha))}</td>
+        <td class="num">${moneda.format(Number(e.costo || 0))}</td>
+      </tr>`).join("")
+    : `<tr><td class="vacio-fila" colspan="6">Ningún envío coincide con los filtros.
+         <button type="button" class="enlace limpiar">Limpiar filtros</button></td></tr>`;
+}
+
+function renderDestinos(f) {
+  const cont = {};
+  f.forEach(e => { cont[e.destino] = (cont[e.destino] || 0) + 1; });
+  const filas = Object.entries(cont).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"));
+  const max = filas.length ? filas[0][1] : 1;
+  $("destinos").innerHTML = filas.length
+    ? filas.map(([d, n]) => `
+        <li><span>${esc(d)}</span><strong>${n}</strong>
+            <span class="d-pista"><i style="width:${(n / max) * 100}%"></i></span></li>`).join("")
+    : `<li>Sin envíos para mostrar.</li>`;
+}
+
+/* =====================================================================
+   5. FILTROS Y EVENTOS
+   ===================================================================== */
+function prepararFiltros() {
+  const estados = ORDEN.filter(k => envios.some(e => e.estado === k))
+    .concat([...new Set(envios.map(e => e.estado))].filter(k => !ORDEN.includes(k)));
+  const destinos = [...new Set(envios.map(e => e.destino))].sort((a, b) => a.localeCompare(b, "es"));
+  $("f-estado").innerHTML = `<option value="todos">Todos</option>` + estados.map(k => `<option value="${esc(k)}">${esc(etiqueta(k))}</option>`).join("");
+  $("f-destino").innerHTML = `<option value="todos">Todos</option>` + destinos.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join("");
+}
+
+function sincronizarSelects() { $("f-estado").value = filtro.estado; $("f-destino").value = filtro.destino; }
+
+function limpiarFiltros() { filtro.estado = "todos"; filtro.destino = "todos"; sincronizarSelects(); render(); }
+
+$("f-estado").addEventListener("change", e => { filtro.estado = e.target.value; render(); });
+$("f-destino").addEventListener("change", e => { filtro.destino = e.target.value; render(); });
+
+document.addEventListener("click", ev => {
+  const tramo = ev.target.closest(".tramo");
+  if (tramo) {
+    filtro.estado = filtro.estado === tramo.dataset.estado ? "todos" : tramo.dataset.estado;
+    sincronizarSelects(); render(); return;
+  }
+  const th = ev.target.closest("th[data-campo]");
+  if (th) {
+    const campo = th.dataset.campo;
+    orden.dir = orden.campo === campo && orden.dir === "asc" ? "desc" : "asc";
+    orden.campo = campo; render(); return;
+  }
+  if (ev.target.closest(".limpiar")) limpiarFiltros();
+});
+
+$("reintentar").addEventListener("click", iniciar);
+
+/* =====================================================================
+   6. ARRANQUE
+   ===================================================================== */
+async function iniciar() {
+  mostrar("cargando");
+  try {
+    const datos = await cargarEnvios();
+    if (!Array.isArray(datos)) throw new Error("Formato de datos inesperado");
+    envios = datos;
+    filtro.estado = "todos"; filtro.destino = "todos";
+    prepararFiltros(); sincronizarSelects();
+    primeraVez = true;
+    render();
+  } catch (err) {
+    console.error(err);
+    mostrar("error");
+  }
+}
+
+$("corte").textContent = "Corte al " + new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+iniciar();
+</script>
+</body>
+</html>
